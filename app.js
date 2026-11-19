@@ -54,7 +54,23 @@ function itemUrl(id) {
   const base = CFG.BASE_URL || location.href.replace(/[^/]*([?#].*)?$/, '');
   return base.replace(/\/?$/, '/') + 'view.html?id=' + encodeURIComponent(id);
 }
+/* QR을 칸 크기가 정수 픽셀이 되도록 직접 그림 + 사방 4칸 흰 여백(표준 quiet zone) → 휴대폰 인식률 향상 */
 function makeQR(el, text, size) {
-  el.innerHTML = '';
-  return new QRCode(el, { text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M });
+  const tmp = document.createElement('div');
+  const m = new QRCode(tmp, { text, correctLevel: QRCode.CorrectLevel.M })._oQRCode;
+  const n = m.getModuleCount(), q = 4, total = n + q * 2;
+  const k = Math.max(2, Math.round(size / total));   // 화면상 칸 크기(px, 정수)
+  const hi = 4;                                       // PNG/PDF용 고해상도 배율
+  const c = document.createElement('canvas');
+  c.width = c.height = total * k * hi;
+  c.style.width = c.style.height = total * k + 'px';
+  c.style.display = 'block';
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#000';
+  const s = k * hi;
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++)
+    if (m.isDark(r, col)) g.fillRect((col + q) * s, (r + q) * s, s, s);
+  el.innerHTML = ''; el.appendChild(c);
+  return c;
 }
