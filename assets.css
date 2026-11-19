@@ -27,9 +27,9 @@ input,select,textarea{font:inherit;color:var(--ink);background:var(--card);borde
 .filters input,.filters select{width:auto;flex:1;min-width:140px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .item{display:block;color:inherit;overflow:hidden;padding:0}
-.item .ph{aspect-ratio:4/3;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px}
-/* 사진은 늘리지 않음(작은 사진은 원래 크기로 선명하게), 큰 사진은 잘리지 않게 전체 표시 */
-.item .ph img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.item .ph{aspect-ratio:16/10;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px}
+/* 카드 사진: 잘리지 않게 카드 폭에 맞춰 크게 표시 (가로형 설비 사진에 맞춘 16:10 비율) */
+.item .ph img{width:100%;height:100%;object-fit:contain;display:block}
 .item .bd{padding:12px}.item .nm{font-weight:600}.item .mt{color:var(--sub);font-size:13px;margin-top:2px}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:#fff}
 .dl{display:grid;grid-template-columns:130px 1fr;gap:8px 12px}
