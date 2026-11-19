@@ -2,11 +2,11 @@
 <html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>설비 등록 · QR 생성</title>
-<link rel="stylesheet" href="assets.css">
+<link rel="stylesheet" href="assets.css?v=9">
 </head><body>
 <header class="top"><div class="in">
   <h1>🏷️ 설비 등록 · QR 생성</h1>
-  <span class="muted" style="font-size:12px">v8</span>
+  <span class="muted" style="font-size:12px">v9</span>
   <a class="btn sm" href="index.html">관제 화면</a>
 </div></header>
 
@@ -61,8 +61,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="config.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="config.js?v=9"></script>
+<script src="app.js?v=9"></script>
 <script>
 let fields = [], items = [], pw = '', cur = null; // cur = 편집 중인 설비 (null이면 신규)
 const F = CFG.F;
@@ -99,7 +99,7 @@ function buildForm() {
     let input;
     if (f.type === 'select') input = `<select name="${i}">${['', ...f.options].map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
     else if (f.type === 'textarea') input = `<textarea name="${i}" rows="3"></textarea>`;
-    else if (f.type === 'image') input = `<input type="file" accept="image/*" capture="environment" name="${i}"><img class="hide" id="pv${i}" alt="">`;
+    else if (f.type === 'image') input = `<input type="file" accept="image/*" capture="environment" name="${i}"><img class="hide" id="pv${i}" alt=""><div class="warn" id="pw${i}"></div>`;
     else input = `<input type="${f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text'}" name="${i}" ${f.type === 'number' ? 'step="any"' : ''}>`;
     return `<div class="${full}"><label>${esc(f.name)}</label>${input}</div>`;
   }).join('');
@@ -107,7 +107,13 @@ function buildForm() {
     if (f.type !== 'image') return;
     $(`[name="${i}"]`).onchange = e => {
       const file = e.target.files[0];
-      if (file) { const pv = $('#pv' + i); pv.src = URL.createObjectURL(file); pv.classList.remove('hide'); }
+      const w = $('#pw' + i); w.textContent = '';
+      if (!file) return;
+      const pv = $('#pv' + i); pv.src = URL.createObjectURL(file); pv.classList.remove('hide');
+      pv.onload = () => {
+        if (Math.max(pv.naturalWidth, pv.naturalHeight) < 800)
+          w.textContent = `⚠️ 사진 해상도가 낮습니다 (${pv.naturalWidth}×${pv.naturalHeight}). 화면에서 작게 보입니다. 휴대폰으로 직접 찍은 원본 사진을 권장합니다.`;
+      };
     };
   });
 }
@@ -118,6 +124,7 @@ function fillForm(item) {
     if (f.type === 'image') {
       el.value = '';
       const pv = $('#pv' + i), u = item && item[f.name];
+      pv.onload = null; $('#pw' + i).textContent = '';
       pv.src = u || ''; pv.classList.toggle('hide', !u);
     } else el.value = item && item[f.name] != null ? item[f.name] : '';
   });
@@ -143,7 +150,7 @@ function reset() {
 $('#resetBtn').onclick = reset;
 
 /* 사진 축소 후 업로드 */
-function resize(file, max = 1280) {
+function resize(file, max = 1600) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => {
@@ -151,7 +158,7 @@ function resize(file, max = 1280) {
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      res(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+      res(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
     };
     img.onerror = rej; img.src = URL.createObjectURL(file);
   });

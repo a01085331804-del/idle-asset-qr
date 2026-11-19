@@ -2,7 +2,7 @@
 <html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>유휴 설비 관제</title>
-<link rel="stylesheet" href="assets.css">
+<link rel="stylesheet" href="assets.css?v=9">
 </head><body>
 <header class="top"><div class="in">
   <h1>🏭 유휴 설비 관제</h1>
@@ -23,8 +23,8 @@
   <div class="grid" id="list"></div>
   <p class="muted" id="empty" style="display:none">표시할 설비가 없습니다.</p>
 </main>
-<script src="config.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="config.js?v=9"></script>
+<script src="app.js?v=9"></script>
 <script>
 let fields = [], items = [];
 const F = CFG.F;
@@ -58,7 +58,7 @@ function render() {
     (!q || Object.values(i).join(' ').toLowerCase().includes(q)));
   $('#list').innerHTML = shown.map(i => `
     <a class="card item" href="view.html?id=${encodeURIComponent(i.ID)}">
-      <div class="ph">${i[F.photo] ? `<img loading="lazy" src="${esc(i[F.photo])}" alt="">` : '사진 없음'}</div>
+      <div class="ph">${i[F.photo] ? `<img loading="lazy" src="${esc(i[F.photo])}" onerror="imgRetry(this)" alt="">` : '사진 없음'}</div>
       <div class="bd">
         <div class="nm">${esc(i[F.name])}</div>
         <div style="margin:4px 0">${badge(fields, i[F.status])}</div>

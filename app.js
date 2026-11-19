@@ -35,10 +35,15 @@ function badge(fields, status) {
   return status ? `<span class="badge" style="background:${statusColor(fields, status)}">${esc(status)}</span>` : '';
 }
 
+/* Drive 미리보기 주소가 가끔 실패 → 다른 Google 이미지 주소로 1회 재시도 */
+function imgRetry(img) {
+  const m = img.src.match(/[?&]id=([\w-]+)/);
+  if (m && !img.dataset.retry) { img.dataset.retry = 1; img.src = 'https://lh3.googleusercontent.com/d/' + m[1]; }
+}
 const isMoney = n => /가액|금액|가격|비용/.test(n);
 function fmtValue(f, v) {
   if (v === '' || v == null) return '<span class="muted">-</span>';
-  if (f.type === 'image') return `<img class="hero" src="${esc(v)}" alt="">`;
+  if (f.type === 'image') return `<img class="hero" src="${esc(v)}" onerror="imgRetry(this)" alt="">`;
   if (f.type === 'number') return Number(v).toLocaleString() + (isMoney(f.name) ? ' 원' : '');
   return esc(v);
 }
