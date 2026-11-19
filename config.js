@@ -18,5 +18,5 @@ window.APP_CONFIG = {
   },
 
   // QR에 들어갈 주소의 기준 (비워두면 현재 사이트 주소를 자동 사용)
-  BASE_URL: ''
+  BASE_URL: 'https://a01085331804-del.github.io/idle-asset-qr/'
 };
