@@ -42,6 +42,7 @@ function fmtValue(f, v) {
   if (f.type === 'number') return Number(v).toLocaleString() + (isMoney(f.name) ? ' 원' : '');
   return esc(v);
 }
+const money = v => (v === '' || v == null) ? '' : Number(v).toLocaleString() + ' 원';
 function won(n) {
   n = Number(n) || 0;
   if (n >= 1e8) return (n / 1e8).toFixed(2).replace(/\.?0+$/, '') + '억원';

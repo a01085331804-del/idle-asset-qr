@@ -13,7 +13,7 @@ a{color:var(--brand);text-decoration:none}
 .btn.sm{padding:4px 10px;font-size:13px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
-.kpi .l{color:var(--sub);font-size:13px}.kpi .v{font-size:26px;font-weight:700;margin-top:2px}
+.kpi .l{color:var(--sub);font-size:13px}.kpi .s{color:var(--sub);font-size:12px;margin-top:2px}.kpi .v{font-size:26px;font-weight:700;margin-top:2px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 @media(max-width:760px){.row2{grid-template-columns:1fr}}
 .bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}

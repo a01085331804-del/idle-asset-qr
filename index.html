@@ -23,8 +23,8 @@
   <div class="grid" id="list"></div>
   <p class="muted" id="empty" style="display:none">표시할 설비가 없습니다.</p>
 </main>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 <script>
 let fields = [], items = [];
 const F = CFG.F;
@@ -39,15 +39,16 @@ function bars(el, map, colorFn) {
 const count = (arr, key) => arr.reduce((m, i) => { const k = i[key] || '(미지정)'; m[k] = (m[k] || 0) + 1; return m; }, {});
 
 function render() {
-  const total = items.reduce((s, i) => s + (Number(i[F.cost]) || 0), 0);
+  const sum = k => items.reduce((s, i) => s + (Number(i[k]) || 0), 0);
+  const total = sum(F.cost), resid = sum(F.residual);
   const st = count(items, F.status);
   const idle = items.filter(i => i[F.status] === '유휴').length;
   $('#kpis').innerHTML = [
-    ['관리 중인 설비', items.length + ' 대'],
-    ['유휴 설비', idle + ' 대'],
-    ['총 취득가액', won(total)],
-    ['위치 수', Object.keys(count(items, F.location)).length + ' 곳']
-  ].map(([l, v]) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+    ['관리 중인 설비', items.length + ' 대', Object.keys(count(items, F.location)).length + '개 위치'],
+    ['유휴 설비', idle + ' 대', items.length ? '전체의 ' + Math.round(idle / items.length * 100) + '%' : ''],
+    ['총 취득가액', won(total), total.toLocaleString() + ' 원'],
+    ['총 잔존가액', won(resid), total ? '취득가액 대비 ' + (resid / total * 100).toFixed(1) + '%' : '']
+  ].map(([l, v, s]) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
   bars($('#byStatus'), st, k => statusColor(fields, k));
   bars($('#byLoc'), count(items, F.location), () => '#2459d6');
 
@@ -62,7 +63,9 @@ function render() {
         <div class="nm">${esc(i[F.name])}</div>
         <div style="margin:4px 0">${badge(fields, i[F.status])}</div>
         <div class="mt">${esc(i[F.assetNo])} · ${esc(i[F.location])}</div>
-        <div class="mt">${i[F.cost] !== '' && i[F.cost] != null ? Number(i[F.cost]).toLocaleString() + ' 원' : ''}</div>
+        ${i[F.size] ? `<div class="mt">사이즈 ${esc(i[F.size])}</div>` : ''}
+        ${money(i[F.cost]) ? `<div class="mt">취득 ${money(i[F.cost])}</div>` : ''}
+        ${money(i[F.residual]) ? `<div class="mt">잔존 ${money(i[F.residual])}</div>` : ''}
       </div></a>`).join('');
   $('#empty').style.display = shown.length ? 'none' : 'block';
 }

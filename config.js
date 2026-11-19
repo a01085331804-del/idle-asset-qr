@@ -11,6 +11,8 @@ window.APP_CONFIG = {
     status: '설비상태',
     assetNo: '자산번호',
     cost: '취득가액',
+    residual: '잔존가액',
+    size: '사이즈',
     photo: '설비사진',
     location: '위치'
   },
