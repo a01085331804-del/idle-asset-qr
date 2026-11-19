@@ -6,6 +6,7 @@
 </head><body>
 <header class="top"><div class="in">
   <h1>🏷️ 설비 등록 · QR 생성</h1>
+  <span class="muted" style="font-size:12px">v4</span>
   <a class="btn sm" href="index.html">관제 화면</a>
 </div></header>
 
@@ -23,7 +24,7 @@
       <h2 id="formTitle">새 설비 등록</h2>
       <form id="form" class="form"></form>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn primary" id="saveBtn" type="submit" form="form">저장 + QR 생성</button>
+        <button class="btn primary" id="saveBtn" type="button" disabled>저장 + QR 생성</button>
         <button class="btn" id="resetBtn" type="button">새 설비로 초기화</button>
         <span class="muted" id="status" style="align-self:center"></span>
       </div>
@@ -60,8 +61,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 <script>
 let fields = [], items = [], pw = '', cur = null; // cur = 편집 중인 설비 (null이면 신규)
 const F = CFG.F;
@@ -74,12 +75,20 @@ async function login(p) {
   try {
     await apiPost({ action: 'auth', password: p });
     pw = p; store.set(p);
-    $('#login').classList.add('hide'); $('#app').classList.remove('hide');
+  } catch (e) { $('#loginMsg').textContent = '❌ ' + e.message; return; }
+  $('#login').classList.add('hide'); $('#app').classList.remove('hide');
+  $('#status').textContent = '설비 항목을 불러오는 중…';
+  try {
     await load();
+    $('#status').textContent = '';
+    $('#saveBtn').disabled = false;
     const ed = new URLSearchParams(location.search).get('edit');
     if (ed) { const it = items.find(i => i.ID === ed); if (it) edit(it); }
-  } catch (e) { $('#loginMsg').textContent = e.message; }
+  } catch (e) { $('#status').textContent = '❌ 불러오기 실패: ' + e.message + ' (새로고침 해주세요)'; }
 }
+/* 예상치 못한 오류도 화면에 표시 */
+addEventListener('error', e => { const s = $('#status'); if (s) s.textContent = '❌ 오류: ' + e.message; });
+addEventListener('unhandledrejection', e => { const s = $('#status'); if (s) s.textContent = '❌ 오류: ' + (e.reason && e.reason.message || e.reason); });
 $('#loginBtn').onclick = () => login($('#pw').value);
 $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') login($('#pw').value); });
 
@@ -141,9 +150,13 @@ function resize(file, max = 1280) {
   });
 }
 
-$('#form').onsubmit = async e => {
-  e.preventDefault();
-  const btn = $('#saveBtn'); btn.disabled = true;
+$('#form').onsubmit = e => { e.preventDefault(); save(); };
+$('#saveBtn').onclick = save;
+async function save() {
+  const btn = $('#saveBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  $('#status').textContent = '저장 중…';
   try {
     const item = cur ? { ID: cur.ID } : {};
     for (let i = 0; i < fields.length; i++) {
