@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>설비 상세</title>
+<link rel="stylesheet" href="assets.css">
+</head><body>
+<header class="top"><div class="in">
+  <h1 id="title">설비 상세</h1>
+  <a class="btn sm" href="index.html">전체 현황</a>
+  <a class="btn sm" id="edit" href="#">수정</a>
+</div></header>
+<main style="max-width:720px">
+  <div id="out" class="card muted">불러오는 중…</div>
+</main>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+(async () => {
+  if (needSetup()) return;
+  const id = new URLSearchParams(location.search).get('id');
+  try {
+    const { fields, item } = await apiGet({ action: 'get', id });
+    document.title = item[CFG.F.name] || '설비 상세';
+    $('#title').textContent = item[CFG.F.name] || '설비 상세';
+    $('#edit').href = 'admin.html?edit=' + encodeURIComponent(id);
+    const img = fields.filter(f => f.type === 'image' && item[f.name]).map(f => fmtValue(f, item[f.name])).join('');
+    const rows = fields.filter(f => f.type !== 'image' && f.name !== CFG.F.name).map(f =>
+      `<dt>${esc(f.name)}</dt><dd>${f.name === CFG.F.status ? badge(fields, item[f.name]) || '-' : fmtValue(f, item[f.name])}</dd>`).join('');
+    $('#out').className = 'card';
+    $('#out').innerHTML = img + `<dl class="dl">${rows}
+      <dt>등록일시</dt><dd>${esc(item['등록일시'])}</dd><dt>최종수정</dt><dd>${esc(item['수정일시'])}</dd></dl>`;
+  } catch (e) {
+    $('#out').className = 'msg err';
+    $('#out').textContent = '조회 실패: ' + e.message;
+  }
+})();
+</script>
+</body></html>
