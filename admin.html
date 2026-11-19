@@ -6,7 +6,7 @@
 </head><body>
 <header class="top"><div class="in">
   <h1>🏷️ 설비 등록 · QR 생성</h1>
-  <span class="muted" style="font-size:12px">v7</span>
+  <span class="muted" style="font-size:12px">v8</span>
   <a class="btn sm" href="index.html">관제 화면</a>
 </div></header>
 
@@ -25,7 +25,7 @@
       <form id="form" class="form"></form>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" id="saveBtn" type="button" disabled>저장 + QR 생성</button>
-        <button class="btn" id="resetBtn" type="button">새 설비로 초기화</button>
+        <button class="btn" id="resetBtn" type="button">+ 새 설비 등록</button>
         <span class="muted" id="status" style="align-self:center"></span>
       </div>
     </div>
@@ -51,7 +51,7 @@
         <button class="btn sm" id="printAll">전체 QR 인쇄</button>
       </div>
       <div class="tablewrap"><table>
-        <thead><tr><th><input type="checkbox" id="chkAll" style="width:auto"></th><th>설비명</th><th>상태</th><th>자산번호</th><th>위치</th><th></th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="chkAll" style="width:auto"></th><th>설비명</th><th>상태</th><th>자산번호</th><th>위치</th><th>최종수정</th><th></th></tr></thead>
         <tbody id="rows"></tbody>
       </table></div>
     </div>
@@ -61,8 +61,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="config.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="app.js?v=8"></script>
 <script>
 let fields = [], items = [], pw = '', cur = null; // cur = 편집 중인 설비 (null이면 신규)
 const F = CFG.F;
@@ -123,15 +123,22 @@ function fillForm(item) {
   });
 }
 
+/* 신규/수정 모드에 따라 제목·버튼 표시 */
+function setMode() {
+  $('#formTitle').textContent = cur ? '✏️ 설비 수정 — ' + (cur[F.name] || cur.ID) : '새 설비 등록';
+  $('#saveBtn').textContent = cur ? '✔ 수정 완료' : '저장 + QR 생성';
+  document.querySelectorAll('#rows tr').forEach(tr => tr.style.background = cur && tr.dataset.id === cur.ID ? 'rgba(36,89,214,.08)' : '');
+}
 function edit(item) {
   cur = item;
-  $('#formTitle').textContent = '설비 수정 — ' + (item[F.name] || item.ID);
-  fillForm(item); showQR(item);
+  fillForm(item); showQR(item); setMode();
+  $('#status').textContent = '내용을 고친 뒤 [✔ 수정 완료]를 누르세요.';
   scrollTo({ top: 0, behavior: 'smooth' });
 }
 function reset() {
-  cur = null; $('#formTitle').textContent = '새 설비 등록';
-  fillForm(null); $('#qrCard').classList.add('hide'); $('#status').textContent = '';
+  cur = null;
+  fillForm(null); $('#qrCard').classList.add('hide'); $('#status').textContent = ''; setMode();
+  scrollTo({ top: 0, behavior: 'smooth' });
 }
 $('#resetBtn').onclick = reset;
 
@@ -156,7 +163,8 @@ async function save() {
   const btn = $('#saveBtn');
   if (btn.disabled) return;
   btn.disabled = true;
-  $('#status').textContent = '저장 중…';
+  const isEdit = !!cur;
+  $('#status').textContent = isEdit ? '수정 반영 중…' : '저장 중…';
   try {
     const item = cur ? { ID: cur.ID } : {};
     for (let i = 0; i < fields.length; i++) {
@@ -168,15 +176,19 @@ async function save() {
         }
       } else item[f.name] = el.value;
     }
-    $('#status').textContent = '저장 중…';
+    $('#status').textContent = isEdit ? '수정 반영 중…' : '저장 중…';
     const r = await apiPost({ action: 'save', password: pw, item });
-    $('#status').textContent = '✅ 저장되었습니다.';
+    if (!r.item) throw new Error('서버가 저장 결과를 돌려주지 않았습니다.');
+    cur = r.item;
     await load();
-    cur = r.item; $('#formTitle').textContent = '설비 수정 — ' + (cur[F.name] || cur.ID);
-    showQR(cur);
-    $('#status').textContent = '✅ 저장되었습니다. QR PDF를 내려받습니다.';
-    savePdf(cur);
-  } catch (err) { $('#status').textContent = '❌ ' + err.message; }
+    fillForm(cur); showQR(cur); setMode();
+    if (isEdit) {
+      $('#status').textContent = `✅ 수정 완료 — 시트에 바로 반영되었습니다. (수정일시 ${cur['수정일시']}) QR은 그대로 사용하면 됩니다.`;
+    } else {
+      $('#status').textContent = '✅ 저장되었습니다. QR PDF를 내려받습니다.';
+      savePdf(cur);
+    }
+  } catch (err) { $('#status').textContent = '❌ ' + err.message; alert((isEdit ? '수정' : '저장') + ' 실패: ' + err.message); }
   btn.disabled = false;
 };
 
@@ -245,12 +257,12 @@ async function load() {
   fields = j.fields; items = j.items;
   if (first) { buildForm(); fillForm(cur); }
   $('#rows').innerHTML = items.map(i => `
-    <tr><td><input type="checkbox" class="rowchk" value="${esc(i.ID)}" style="width:auto"></td>
+    <tr data-id="${esc(i.ID)}"><td><input type="checkbox" class="rowchk" value="${esc(i.ID)}" style="width:auto"></td>
     <td><a href="view.html?id=${encodeURIComponent(i.ID)}">${esc(i[F.name])}</a></td>
-    <td>${badge(fields, i[F.status])}</td><td>${esc(i[F.assetNo])}</td><td>${esc(i[F.location])}</td>
+    <td>${badge(fields, i[F.status])}</td><td>${esc(i[F.assetNo])}</td><td>${esc(i[F.location])}</td><td class="muted" style="white-space:nowrap">${esc(i['수정일시'])}</td>
     <td style="white-space:nowrap"><button class="btn sm" data-e="${esc(i.ID)}">수정/QR</button>
     <button class="btn sm danger" data-d="${esc(i.ID)}">삭제</button></td></tr>`).join('')
-    || '<tr><td colspan="6" class="muted">등록된 설비가 없습니다.</td></tr>';
+    || '<tr><td colspan="7" class="muted">등록된 설비가 없습니다.</td></tr>';
 }
 $('#rows').onclick = async e => {
   const eid = e.target.dataset.e, did = e.target.dataset.d;
